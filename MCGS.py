@@ -18,8 +18,8 @@ class MCGS(object):
         An MCGS object represents the MCGS sampling algorithm instance model without
         properties. It has only one open interface method named "run_sampling".
         This method can be applied to the graph data and complete the sampling process.
-        Besides, the run_sampling method can receive specific parameters, such as 
-        sampling rate, alpha, beta and loss weight, for multi-dimensional sampling of 
+        Besides, the run_sampling method can receive specific parameters, such as
+        sampling rate, alpha, beta and loss weight, for multi-dimensional sampling of
         the graph data.
 
     Examples
@@ -123,7 +123,7 @@ class MCGS(object):
         # initialize original graph information
         self.__init_original_graph_info(G)
 
-        # identify minority structures 
+        # identify minority structures
         minority_structures = {}  # minority structure record dictionary
         pivot_star_structures = self.__identify_pivot_and_star_structures(G)
         minority_structures.update(pivot_star_structures)
@@ -324,9 +324,10 @@ class MCGS(object):
             a_one_nodes = cut_point_neighbors_records_in_G[chain_item[0]] & one_degree_node_set
             b_one_nodes = cut_point_neighbors_records_in_G[chain_item[-1]] & one_degree_node_set
 
-            # if one-degree neighbor nodes exist only on one side of a chain, then
-            # the chain is a rim, else a tie.
-            if len(a_one_nodes) ^ len(b_one_nodes):
+            # if one-degree neighbor nodes exist only on one side of a chain,
+            # then the chain is a rim, else a tie.
+            if (len(a_one_nodes) != 0 and len(b_one_nodes) == 0) \
+                    or (len(a_one_nodes) == 0 and len(b_one_nodes) != 0):
                 minority_structures['rim'].append(chain_item)
             else:
                 minority_structures['tie'].append(chain_item)
