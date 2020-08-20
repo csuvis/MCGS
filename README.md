@@ -1,6 +1,8 @@
 # Mino-Centric Graph Sampling (MCGS)
 The MCGS is a new graph sampling approach focusing on minority structures in graphs. 
-It is designed to preserve minority structures in sampled graphs while balancing the preservation of minority and majority structures and suppressing the generation of new minority structures.
+It is designed to preserve minority structures in sampled graphs while balancing the
+preservation of minority and majority structures and suppressing the generation of
+new minority structures.
 
 ## Installation
 The MCGS is implemented in python3 with dependency packages of networkx and numpy.  
@@ -35,3 +37,9 @@ $ python usage_example.py
 ```
 
 For more information about MCGS and the usage, please see MCGS.py.
+
+## Reference Paper
++ Ying Zhao, Haojin Jiang, Qi'an Chen, Yaqi Qin, Huixuan Xie, Yitao Wu, Shixia Liu,
+Zhiguang Zhou, Jiazhi Xia, and Fangfang Zhou. Preserving Minority Structures in
+Graph Sampling[J]. *IEEE Transactions on Visualization and Computer Graphics*,
+2021 (IEEE VIS 2020 VAST TVCG Track).
