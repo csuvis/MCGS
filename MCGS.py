@@ -124,27 +124,29 @@ class MCGS(object):
         self.__init_original_graph_info(G)
 
         # identify minority structures
-        minority_structures = {}  # minority structure record dictionary
+        minority_structures = {}
         pivot_star_structures = self.__identify_pivot_and_star_structures(G)
         minority_structures.update(pivot_star_structures)
         rim_tie_structures = self.__identify_rim_and_tie_structures(G)
         minority_structures.update(rim_tie_structures)
 
-        Gs = nx.Graph()  # sampling graph
+        # sampling graph
+        Gs = nx.Graph()
 
-        # sample minority structures and their one-step neighbors
+        # sample minority structures
         self.__minority_structure_sampling(G, Gs, minority_structures)
 
-        # sample majority structures according to the current and required sample sizes
-        # or delete extra nodes
+        # sample majority structures
         size = round(len(G.nodes()) * self.__rate)
         Gs_size = len(Gs.nodes())
         if Gs_size < size:
             self.__majority_structure_sampling(G, Gs, size)
         elif Gs_size > size:
-            self.__random_delete_node(Gs, size)
+            self.__delete_node_randomly(Gs, size)
 
-        Gs = G.subgraph(Gs.nodes())  # induce subgraph from original graph based on the sampled nodes
+        # induce subgraph from original graph based on the sampled nodes
+        Gs = G.subgraph(Gs.nodes())
+
         return Gs
 
     def __init_sampling_settings(self, rate, alpha=1, beta=2, loss_weight=None):
@@ -211,7 +213,8 @@ class MCGS(object):
             'star': []
         }
 
-        # detect triangle structures among nodes with top 5% degrees, and identify super pivots
+        # detect triangle structures among nodes with top 5% degrees,
+        # and identify super pivots
         sorted_node_by_degree = sorted(original_nodes,
                                        key=lambda x: self.__G_node_degree_dict[x],
                                        reverse=True)
@@ -252,8 +255,10 @@ class MCGS(object):
             filter(lambda item: self.__G_node_degree_dict[item] == 1,
                    self.__G_node_degree_dict.keys()))
 
-        cut_points = set(nx.articulation_points(G))  # cut point set in original graph
-        cut_points_graph = G.subgraph(cut_points)  # induced subgraph from the original graph based on cut points
+        # cut point set in original graph
+        cut_points = set(nx.articulation_points(G))
+        # induced subgraph from the original graph based on cut points
+        cut_points_graph = G.subgraph(cut_points)
 
         # dictionary recording the degree of each cut point in the induced subgraph
         cut_point_degree_dict = {_[0]: _[1] for _ in cut_points_graph.degree()}
@@ -265,8 +270,8 @@ class MCGS(object):
         chains_list = []
         parachute_set = set()
 
-        # start from cut points with degrees lower than 1 as end points of chain
-        # structures, and traverse all cut points
+        # start from cut points with degrees lower than 1 as end points of chain structures, 
+        # and traverse all cut points
         iter_nodes = list(filter(lambda item: cut_point_degree_dict[item] <= 1, cut_points))
         seen = set()
         while len(cut_points - seen) > 0:
@@ -282,8 +287,8 @@ class MCGS(object):
                             parachute_set.add(current_node)
                         neighbors = cut_point_neighbors_records[current_node]
 
-                        # the loop exits when the current cut point does not have cut point neighbors.
-                        # Or else, move to next node and continue traversal
+                        # the loop exits when the current cut point does not have cut point neighbors,
+                        # or else, move to next node and continue traversal
                         if not neighbors or len(set(neighbors) - seen) >= 2:
                             break
                         else:
@@ -317,17 +322,17 @@ class MCGS(object):
             'tie': []
         }
 
-        chains_list.sort(key=lambda chain: len(chain), reverse=True)  # sort the chains according to their length
+        # sort the chains according to their length
+        chains_list.sort(key=lambda chain: len(chain), reverse=True)
 
         for chain_item in chains_list:
             # get the set of one-degree neighbor nodes of the end nodes of each chain
             a_one_nodes = cut_point_neighbors_records_in_G[chain_item[0]] & one_degree_node_set
             b_one_nodes = cut_point_neighbors_records_in_G[chain_item[-1]] & one_degree_node_set
 
-            # if one-degree neighbor nodes exist only on one side of a chain,
+            # if any end node of the chain has one and only one neighbor with degree 1 in G,
             # then the chain is a rim, else a tie.
-            if (len(a_one_nodes) != 0 and len(b_one_nodes) == 0) \
-                    or (len(a_one_nodes) == 0 and len(b_one_nodes) != 0):
+            if len(a_one_nodes) == 1 or len(b_one_nodes) == 1:
                 minority_structures['rim'].append(chain_item)
             else:
                 minority_structures['tie'].append(chain_item)
@@ -351,25 +356,21 @@ class MCGS(object):
         for value in minority_structures.values():
             for item in value:
                 if type(item) == int:
-                    # add minority structures with one node to minority structure set
-                    # and the sampling graph Gs
+                    # the single node structures are sampled by points
                     self.__G_minority_structures_set.add(item)
                     Gs.add_node(item)
 
-                    # get the neighbors of current minority structures, and conduct
-                    # random sampling according to beta
+                    # conduct random sampling of neighbors
                     neighbor_list = list(self.__G_neighbors_dict[item])
                     sample_size = math.ceil(
                         len(neighbor_list) * self.__rate / self.__beta)
                     sample_node_list = random.sample(neighbor_list, sample_size)
                 else:
-                    #  add chain-like minority structures to minority structure set
-                    #  and the sampling graph Gs
+                    # the chain structures are sampled as a whole
                     self.__G_minority_structures_set |= set(item)
                     Gs.add_nodes_from(item)
 
-                    # get the neighbors of chain-like minority structures, and conduct
-                    # random sampling according to beta
+                    # conduct random sampling of neighbors
                     node_list = []
                     for node in item:
                         node_list.extend(list(self.__G_neighbors_dict[node]))
@@ -385,8 +386,7 @@ class MCGS(object):
         G_nodes = set(G.nodes())
         Gs_nodes = set(Gs.nodes())
         candidate_node_set = G_nodes - Gs_nodes
-        current_Gs_degrees = {_[0]: _[1] for _ in
-                              list(G.subgraph(Gs_nodes).degree())}
+        current_Gs_degrees = {_[0]: _[1] for _ in list(G.subgraph(Gs_nodes).degree())}
 
         # the difference between the node degrees in the sample and the original graph
         sub_degrees = {key: self.__G_node_degree_dict[key] - value for
@@ -405,7 +405,9 @@ class MCGS(object):
         G_connected_components = len(sorted(nx.connected_components(G)))
         # the number of connected components in current sampling graph
         temp_connected_components = len(sorted(nx.connected_components(temp_graph)))
-        temp_NCC = 1  # the similarity of connectivity between Gs and G
+        
+        # the similarity of connectivity between Gs and G, and the initial value is 1
+        temp_NCC = 1
 
         # the structural similarity between Gs and G
         temp_JI = 0
@@ -437,7 +439,8 @@ class MCGS(object):
                 'JI': temp_JI
             }
 
-            all_node_record_dict = {}  # loss metrics record of each candidate node
+            # loss metrics record of each candidate node
+            all_node_record_dict = {}
 
             for iter_node in candidate_node_set:
                 # the neighbors of iter_node in Gs
@@ -496,8 +499,8 @@ class MCGS(object):
                     'JI': new_JI
                 }
 
-            # calculate the overall loss according to the loss weight, and get
-            # the optimal candidate node
+            # calculate the overall loss according to the loss weight,
+            # and get the optimal candidate node
             select_node = None
             if self.__loss_weight[0] == 0 and self.__loss_weight[1] == 0:
                 select_node = min_loss_record_dict['JI']['node']
@@ -548,20 +551,17 @@ class MCGS(object):
             for other_node in all_node_record_dict[select_node]['new_edge_nodes']:
                 sub_degrees[other_node] -= 1
 
-            # add the candidate node to the sampling graph
             Gs.add_node(select_node)
             Gs_nodes.add(select_node)
 
-            # update the MSE, JI and NCC
+            # update the MSE, JI, NCC and the number of connected components between G and Gs
             temp_MSE = all_node_record_dict[select_node]['MSE']
             temp_JI = all_node_record_dict[select_node]['JI']
             temp_NCC = all_node_record_dict[select_node]['NCC']
-
-            # update the number of connected components between G and Gs
             if not all_node_record_dict[select_node]['new_edge_nodes']:
                 temp_connected_components += 1
 
-    def __random_delete_node(self, Gs, size):
+    def __delete_node_randomly(self, Gs, size):
         """Delete extra nodes randomly, prioritizing majority structures."""
         Gs_nodes = set(Gs.nodes())
         count = len(Gs_nodes) - size
