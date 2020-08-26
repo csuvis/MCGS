@@ -283,7 +283,8 @@ class MCGS(object):
 
                     while 1:
                         # detect parachute structure nodes
-                        if cut_point_neighbors_records_in_G[current_node] & one_degree_node_set:
+                        if cut_point_neighbors_records_in_G[current_node] - set(
+                                cut_point_neighbors_records[current_node]):
                             parachute_set.add(current_node)
                         neighbors = cut_point_neighbors_records[current_node]
 
@@ -313,7 +314,8 @@ class MCGS(object):
                        remaining_cut_points))
             if not iter_nodes:
                 for cut_point in remaining_cut_points:
-                    if cut_point_neighbors_records_in_G[cut_point] & one_degree_node_set:
+                    if cut_point_neighbors_records_in_G[cut_point] - set(
+                            cut_point_neighbors_records[cut_point]):
                         parachute_set.add(cut_point)
                 break
 
