@@ -357,7 +357,7 @@ class MCGS(object):
         # sample the minority structures and their one-step neighbors
         for value in minority_structures.values():
             for item in value:
-                if type(item) == int:
+                if type(item) == int or type(item) == str:
                     # the single node structures are sampled by points
                     self.__G_minority_structures_set.add(item)
                     Gs.add_node(item)
